@@ -1,0 +1,10 @@
+# Olist source data (large, Kaggle license: link to it instead of committing it)
+*.csv
+
+# OS / editor files
+.DS_Store
+.vscode/
+.idea/
+
+# Databricks CLI / local state
+.databricks/
