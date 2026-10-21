@@ -109,7 +109,3 @@ Screenshots to add: quarantine reasons, a customer with two versions in `dim_cus
 - **Run the pipeline as an admin / owner.** `02_silver` compares `dim_customer` addresses; a masked zip would look like a change. Re-run `04_governance` after every `03_gold` run (`CREATE OR REPLACE TABLE` drops policies).
 - Policies use group membership; production would use account-level groups (`is_account_group_member`) or ABAC tags.
 - No scheduling, automated tests or CI yet.
-
-## SQL practice
-
-`sql/SQL_INTERVIEW_PRACTICE.md` contains 17 interview-style queries on this data. The first 13 were run on the full CSVs (in SQLite) and their results are shown.
