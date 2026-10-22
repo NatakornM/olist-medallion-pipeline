@@ -79,24 +79,58 @@ Requirements: Unity Catalog with Volumes and a runtime that supports Auto Loader
 
 ## Results
 
-<!--
-  TODO before publishing: run both batches, fill in the "Actual" column, add screenshots under
-  docs/images/, then delete this comment and the "Expected" note.
--->
-
 Facts about the source data (measured on the CSV files): 99,441 orders, 112,650 order items, 32,951 products; 775 orders have no items; 97% of orders are delivered.
 
-**"Expected" is what the simulation is designed to produce, not a measured result.**
+**"Expected" is what the simulation is designed to produce; "Actual" was measured on a real run (both batches).**
 
 | Check (after both batches) | Expected | Actual |
 |---|---|---|
 | `quarantine_orders` rows | 20 (10 null key + 10 malformed key) | 20 |
 | `silver_orders` rows | 99,441 | 99,441 |
-| orders updated to `delivered` by CDC | up to 1,000 | _fill in_ |
-| `dim_customer` rows where `is_current` | 99,441 | _fill in_ |
+| orders updated to `delivered` by CDC (orders with a newer version in Bronze) | up to 1,000 | 1,000 |
+| `dim_customer` rows where `is_current` | 99,441 | 99,441 |
 | extra closed versions in `dim_customer` | about 1,000 (a few fewer if a mover draws the old address) | 1,000 (100,441 rows in total) |
+| quarantine reasons | `order_id_null` 10, `order_id_invalid` 10 | 10 and 10 |
+| masks / row filter attached (`information_schema`) | 2 masks on `dim_customer`, 1 row filter on `gold_sales_summary` | 2 masks, 1 row filter |
+| `dim_customer` seen by a non-admin | `customer_unique_id` as 64-char hash, zip like `08***` | as expected |
+| `gold_sales_summary` seen by a non-admin | 0 rows | 0 rows |
+| `gold_sales_summary` seen by an admin | all states | all states (SP largest: 13,774 rows, 5,197,762.15 revenue) |
+| `clusteringColumns` of the 3 tables | `order_id` / `customer_id` / `order_date, customer_state` | as expected (1 file each after `OPTIMIZE`) |
 
-Screenshots to add: quarantine reasons, a customer with two versions in `dim_customer`, `DESCRIBE DETAIL gold_sales_summary` (clustering columns), top rows of the gold table.
+### Screenshots
+
+**Row counts and data quality**
+
+![Row counts](docs/images/row_counts.png)
+![Quarantine reasons](docs/images/quarantine_reasons.png)
+
+**SCD Type 2** (a customer with two versions; viewed as a non-admin, so IDs and zip codes are masked)
+
+![SCD2 history](docs/images/scd2_history.png)
+
+**Liquid Clustering** (clustering columns of the three tables after `OPTIMIZE`)
+
+![Clustering columns](docs/images/clustering.png)
+
+**Gold table** (top rows, viewed as admin)
+
+![Gold top 10](docs/images/gold_top10_admin.png)
+
+**Column mask on `dim_customer`**
+
+| Admin | Non-admin |
+|---|---|
+| ![Mask, admin](docs/images/mask_admin.png) | ![Mask, non-admin](docs/images/mask_nonadmin.png) |
+
+**Row filter on `gold_sales_summary`**
+
+| Admin | Non-admin |
+|---|---|
+| ![Row filter, admin](docs/images/rowfilter_admin.png) | ![Row filter, non-admin](docs/images/rowfilter_nonadmin.png) |
+
+**Policies attached (Unity Catalog metadata)**
+
+![Masks and row filter](docs/images/policies.png)
 
 ## Design choices and limitations
 
@@ -106,10 +140,6 @@ Screenshots to add: quarantine reasons, a customer with two versions in `dim_cus
 - **Gold reads items and products from Bronze** and casts inline; a fuller version would add Silver tables for them.
 - **Silver re-reads all of Bronze each run.** Fine for ~100K rows; for large data use Change Data Feed or a streaming read.
 - **Inner joins in Gold** drop orders without items.
-- **Run the pipeline as an admin / owner.** `02_silver` compares `dim_customer` addresses; a masked zip would look like a change. Re-run `04_governance` after every `03_gold` run (`CREATE OR REPLACE TABLE` drops policies).
+- **Run the pipeline as an admin / owner.** `02_silver` compares `dim_customer` addresses; a masked zip would look like a change. Run `04_governance` last. It is idempotent, so re-running it after `03_gold` is a cheap way to be sure the policies are attached (in one test run the row filter survived the Gold table replace, so check `information_schema.row_filters` instead of assuming).
 - Policies use group membership; production would use account-level groups (`is_account_group_member`) or ABAC tags.
 - No scheduling, automated tests or CI yet.
-
-## SQL practice
-
-`sql/SQL_INTERVIEW_PRACTICE.md` contains 17 interview-style queries on this data. The first 13 were run on the full CSVs (in SQLite) and their results are shown.
