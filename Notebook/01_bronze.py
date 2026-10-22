@@ -1,4 +1,8 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "6"
+# ///
 # ==============================================================================
 # 01_bronze - raw data, every column kept as a STRING, plus control columns
 #   (_load_dttm, _file_path, _file_size, _file_modification_time).
@@ -8,6 +12,7 @@
 # ==============================================================================
 
 # COMMAND ----------
+
 from pyspark.sql import functions as F
 
 CATALOG = "workspace"   # change to your catalog (same value in all 4 notebooks)
@@ -21,6 +26,7 @@ spark.sql(f"USE CATALOG {CATALOG}")
 spark.sql(f"USE SCHEMA {SCHEMA}")
 
 # COMMAND ----------
+
 def add_control_cols(df):
     """Control columns for every Bronze table (works for both streaming and batch reads)."""
     return (df
@@ -54,6 +60,7 @@ for feed in ["orders", "customers"]:
     ingest(feed)
 
 # COMMAND ----------
+
 for feed, file in [("order_items", "olist_order_items_dataset.csv"),
                    ("products", "olist_products_dataset.csv")]:
     raw = spark.read.option("header", "true").csv(f"{SRC}/{file}")
@@ -62,5 +69,6 @@ for feed, file in [("order_items", "olist_order_items_dataset.csv"),
           .saveAsTable(f"bronze_{feed}"))
 
 # COMMAND ----------
+
 for t in ["bronze_orders", "bronze_customers", "bronze_order_items", "bronze_products"]:
     print(t, spark.table(t).count())

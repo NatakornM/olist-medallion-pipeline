@@ -99,4 +99,10 @@ display(spark.sql("""
     FROM gold_sales_summary GROUP BY customer_state ORDER BY revenue DESC"""))
 
 # COMMAND ----------
-display(spark.sql("DESCRIBE EXTENDED dim_customer"))   # shows the column masks
+# which masks and row filters are attached (Unity Catalog metadata)
+display(spark.sql(f"""
+    SELECT table_name, column_name, mask_name
+    FROM information_schema.column_masks WHERE table_schema = '{SCHEMA}'"""))
+display(spark.sql(f"""
+    SELECT table_name, filter_name, target_columns
+    FROM information_schema.row_filters WHERE table_schema = '{SCHEMA}'"""))

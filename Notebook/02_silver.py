@@ -1,4 +1,8 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "6"
+# ///
 # ==============================================================================
 # 02_silver
 #   A) orders    : DQ (flags -> melt -> `reason`) -> quarantine, dedup, CDC MERGE
@@ -6,6 +10,7 @@
 # ==============================================================================
 
 # COMMAND ----------
+
 from functools import reduce
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
@@ -29,10 +34,12 @@ def try_ts(col):
     return F.expr(f"try_to_timestamp({col}, '{TS_FMT}')")   # NULL instead of an error if invalid
 
 # COMMAND ----------
+
 # MAGIC %md
 # MAGIC ## A) Orders: data quality
 
 # COMMAND ----------
+
 # _sk = hash of the row's content. NULLs are replaced by a marker because xxhash64 skips NULLs.
 bronze = (spark.table("bronze_orders")
           .withColumn("_sk", F.xxhash64(*[F.coalesce(F.col(c), F.lit("<NULL>")) for c in ORDER_COLS])))
@@ -66,10 +73,12 @@ good = flagged.join(reasons.select("_sk"), "_sk", "left_anti").drop(*flags, "_sk
     .write.mode("overwrite").option("overwriteSchema", "true").saveAsTable("quarantine_orders"))
 
 # COMMAND ----------
+
 # MAGIC %md
 # MAGIC ## A) Orders: dedup (exact duplicates and CDC versions) and MERGE
 
 # COMMAND ----------
+
 typed = good.select(
     "order_id", "customer_id", "order_status",
     *[try_ts(c).alias(c) for c in TS_COLS],
@@ -91,10 +100,12 @@ else:
      .execute())
 
 # COMMAND ----------
+
 # MAGIC %md
 # MAGIC ## B) Customers: SCD Type 2 (dim_customer)
 
 # COMMAND ----------
+
 ADDR = ["customer_zip_code_prefix", "customer_city", "customer_state"]
 
 # latest version of each customer_id from Bronze (batch 2 rows win over batch 1)
@@ -135,5 +146,6 @@ else:
      .execute())
 
 # COMMAND ----------
+
 for t in ["silver_orders", "quarantine_orders", "dim_customer"]:
     print(t, spark.table(t).count())

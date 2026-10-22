@@ -50,6 +50,14 @@ display(spark.sql("""
     SELECT 'dim_customer (current)', count(*) FROM dim_customer WHERE is_current"""))
 
 # COMMAND ----------
+# orders that received a later version in Bronze (the CDC updates); expected: 1,000
+display(spark.sql("""
+    SELECT count(*) AS orders_with_updates FROM (
+        SELECT order_id FROM bronze_orders
+        WHERE order_id RLIKE '^[a-f0-9]{32}$'
+        GROUP BY order_id HAVING count(DISTINCT source_updated_at) > 1)"""))
+
+# COMMAND ----------
 # why were rows quarantined?
 display(spark.sql("""
     SELECT reason, count(*) AS n

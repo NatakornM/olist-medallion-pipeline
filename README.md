@@ -90,11 +90,11 @@ Facts about the source data (measured on the CSV files): 99,441 orders, 112,650 
 
 | Check (after both batches) | Expected | Actual |
 |---|---|---|
-| `quarantine_orders` rows | 20 (10 null key + 10 malformed key) | _fill in_ |
-| `silver_orders` rows | 99,441 | _fill in_ |
+| `quarantine_orders` rows | 20 (10 null key + 10 malformed key) | 20 |
+| `silver_orders` rows | 99,441 | 99,441 |
 | orders updated to `delivered` by CDC | up to 1,000 | _fill in_ |
 | `dim_customer` rows where `is_current` | 99,441 | _fill in_ |
-| extra closed versions in `dim_customer` | about 1,000 (a few fewer if a mover draws the old address) | _fill in_ |
+| extra closed versions in `dim_customer` | about 1,000 (a few fewer if a mover draws the old address) | 1,000 (100,441 rows in total) |
 
 Screenshots to add: quarantine reasons, a customer with two versions in `dim_customer`, `DESCRIBE DETAIL gold_sales_summary` (clustering columns), top rows of the gold table.
 
