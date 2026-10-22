@@ -32,7 +32,7 @@ flowchart LR
 | Notebook | What it does |
 |---|---|
 | `00_mock_data.py` | Simulated source system. `batch` widget: **1** = 70% of orders + bad rows + all customers; **2** = remaining 30% of orders + 1,000 status updates (CDC) + 1,000 customers who moved (SCD2). `reset` widget wipes everything. |
-| `01_bronze.py` | Auto Loader for orders and customers (only new files are read each run, via checkpoints). Everything is kept as strings plus `_load_dttm` and `_file_path`. Items and products are loaded once. |
+| `01_bronze.py` | Auto Loader for orders and customers (only new files are read each run, via checkpoints). Everything is kept as strings plus control columns: `_load_dttm`, `_file_path`, `_file_size` (bytes) and `_file_modification_time`. Items and products are loaded once and get the same control columns. |
 | `02_silver.py` | Orders: DQ → quarantine → dedup → MERGE. Customers: SCD2 into `dim_customer`. |
 | `03_gold.py` | Sales mart by day, state and category, then verification queries. |
 | `04_governance.py` | Unity Catalog governance: Liquid Clustering check + OPTIMIZE, **column masks** on `dim_customer`, **row filter** on `gold_sales_summary`. Run last. |
