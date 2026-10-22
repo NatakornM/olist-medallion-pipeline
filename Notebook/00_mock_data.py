@@ -1,4 +1,8 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "6"
+# ///
 # ==============================================================================
 # 00_mock_data - fake source system that sends CDC / SCD2 batches (PySpark only).
 #
@@ -13,6 +17,7 @@
 # ==============================================================================
 
 # COMMAND ----------
+
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
 
@@ -33,6 +38,7 @@ dbutils.widgets.dropdown("reset", "no", ["no", "yes"])
 BATCH = dbutils.widgets.get("batch")
 
 # COMMAND ----------
+
 if dbutils.widgets.get("reset") == "yes":
     for t in ["bronze_orders", "bronze_customers", "bronze_order_items", "bronze_products",
               "silver_orders", "dim_customer", "quarantine_orders", "gold_sales_summary",
@@ -45,6 +51,7 @@ if dbutils.widgets.get("reset") == "yes":
     print("reset done")
 
 # COMMAND ----------
+
 BATCH1_TS = "2018-10-01 00:00:00"   # source_updated_at of batch 1
 BATCH2_TS = "2018-10-02 00:00:00"   # source_updated_at of batch 2
 ADDR = ["customer_zip_code_prefix", "customer_city", "customer_state"]
@@ -74,6 +81,7 @@ orders = read_src("olist_orders_dataset.csv")
 customers = read_src("olist_customers_dataset.csv")
 
 # COMMAND ----------
+
 if BATCH == "1":
     b1 = orders.filter(in_batch1()).withColumn("source_updated_at", F.lit(BATCH1_TS))
 
